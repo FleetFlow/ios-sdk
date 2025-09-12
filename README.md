@@ -20,16 +20,9 @@ Add the following dependency to your `Package.swift` file:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/FleetFlow/swift-sdk.git", from: "1.0.0")
+    .package(url: "https://github.com/FleetFlow/ios-sdk.git", from: "1.0.0")
+	.package(url: "https://github.com/SwiftyJSON/SwiftyJSON.git", from: "5.0.0")
 ]
-```
-
-### CocoaPods
-
-Add the following to your `Podfile`:
-
-```ruby
-pod 'FleetFlowSDK', '~> 1.0'
 ```
 
 ## Quick Start
