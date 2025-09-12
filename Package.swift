@@ -12,8 +12,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "FleetFlowSDK",
-            url: "https://github.com/FleetFlow/ios-sdk/releases/download/v1.0.0-beta1/FleetFlowSDK.xcframework.zip",
-            checksum: "1794d61ab61dc3fce81c642e95314d9289eb588293cb0134f60f441ffd3fadac"
+            url: "https://github.com/FleetFlow/ios-sdk/releases/download/v1.0.0-beta2/FleetFlowSDK.xcframework.zip",
+            checksum: "9c059accb6bac233c6d5b9af42df6e5f25b1f07e8c8a15e77d1eeef677c39185"
         )
     ]
 )
