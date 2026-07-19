@@ -4,6 +4,8 @@ The FleetFlow iOS SDK provides a native Swift integration layer for authenticati
 
 It is designed to help you ship faster with async/await-friendly APIs and built-in session handling, instead of wiring each integration piece yourself.
 
+Requires iOS 18 or later.
+
 ## Before you jump in
 
 Have these ready:
