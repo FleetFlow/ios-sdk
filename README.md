@@ -35,4 +35,4 @@ dependencies: [
 
 Start with the official docs at the **iOS SDK** tab:
 
-- https://fleetflow.io/docs?sdk=ios
+- https://developer.fleetflow.io?sdk=ios
