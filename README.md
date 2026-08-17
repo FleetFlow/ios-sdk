@@ -31,6 +31,26 @@ dependencies: [
 ]
 ```
 
+## Authentication
+
+Use `login()` for FleetFlow's hosted OAuth experience:
+
+```swift
+try await FleetFlow.shared.login()
+```
+
+First-party iOS apps can also present their own native email-code UI. The SDK
+still completes OAuth with authorization code + PKCE and stores the resulting
+access and refresh tokens securely:
+
+```swift
+try await FleetFlow.shared.sendLoginCode(to: email)
+try await FleetFlow.shared.login(email: email, oneTimeCode: code)
+```
+
+The native flow uses the authentication methods and organization boundary of
+the configured OAuth client. It does not expose or store a password in the app.
+
 ## Full documentation
 
 Start with the official docs at the **iOS SDK** tab:
