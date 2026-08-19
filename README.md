@@ -48,6 +48,34 @@ try await FleetFlow.shared.sendLoginCode(to: email)
 try await FleetFlow.shared.login(email: email, oneTimeCode: code)
 ```
 
+To prefer passkeys when an account has one, resolve its methods before choosing
+the next screen:
+
+```swift
+let methods = try await FleetFlow.shared.loginMethods(for: email)
+
+if methods.passkey {
+    try await FleetFlow.shared.loginWithPasskey(email: email)
+} else {
+    try await FleetFlow.shared.sendLoginCode(to: email)
+}
+```
+
+After an email-code sign-in, apps can offer passkey registration while the
+short-lived authentication session is still available:
+
+```swift
+if methods.passkeyRegistration && !methods.passkey {
+    try await FleetFlow.shared.createPasskey(name: "My app · \(email)")
+} else {
+    FleetFlow.shared.finishNativePasskeySetup()
+}
+```
+
+Native passkeys also require the host app to enable Associated Domains with
+`webcredentials:auth.fleetflow.io`. FleetFlow must list the app's team and
+bundle identifier in the domain's Apple App Site Association file.
+
 The native flow uses the authentication methods and organization boundary of
 the configured OAuth client. It does not expose or store a password in the app.
 
