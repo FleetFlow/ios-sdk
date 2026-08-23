@@ -39,6 +39,18 @@ Use `login()` for FleetFlow's hosted OAuth experience:
 try await FleetFlow.shared.login()
 ```
 
+To open the hosted flow with Google or Apple already selected, use the
+provider-specific overload. This keeps provider credentials and email-based
+account linking on FleetFlow's authentication service:
+
+```swift
+try await FleetFlow.shared.login(with: .google)
+try await FleetFlow.shared.login(with: .apple)
+```
+
+The SDK uses a persistent `ASWebAuthenticationSession` so provider SSO and the
+hosted page's **Last used** indicator can carry across login attempts.
+
 First-party iOS apps can also present their own native email-code UI. The SDK
 still completes OAuth with authorization code + PKCE and stores the resulting
 access and refresh tokens securely:
