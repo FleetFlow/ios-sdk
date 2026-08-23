@@ -39,17 +39,29 @@ Use `login()` for FleetFlow's hosted OAuth experience:
 try await FleetFlow.shared.login()
 ```
 
-To open the hosted flow with Google or Apple already selected, use the
-provider-specific overload. This keeps provider credentials and email-based
-account linking on FleetFlow's authentication service:
+Use the provider-specific overload for social sign-in. Apple presents the
+system Sign in with Apple sheet; Google opens Google's supported iOS
+authorization session. Provider tokens are verified by FleetFlow and linked to
+the configured customer or platform account by verified email:
 
 ```swift
 try await FleetFlow.shared.login(with: .google)
 try await FleetFlow.shared.login(with: .apple)
 ```
 
-The SDK uses a persistent `ASWebAuthenticationSession` so provider SSO and the
-hosted page's **Last used** indicator can carry across login attempts.
+The host app must enable the **Sign in with Apple** capability. FleetFlow must
+also register the app bundle identifier as an accepted native Apple client ID.
+
+Apps that already obtain a native provider identity token can hand it to the
+SDK without implementing FleetFlow's linking or OAuth exchange themselves:
+
+```swift
+try await FleetFlow.shared.login(
+    with: .google,
+    idToken: googleIDToken,
+    accessToken: googleAccessToken
+)
+```
 
 First-party iOS apps can also present their own native email-code UI. The SDK
 still completes OAuth with authorization code + PKCE and stores the resulting
