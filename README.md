@@ -107,4 +107,4 @@ the configured OAuth client. It does not expose or store a password in the app.
 
 Start with the official docs at the **iOS SDK** tab:
 
-- https://developer.fleetflow.io?sdk=ios
+- https://account.fleetflow.io/developer/docs?sdk=ios
