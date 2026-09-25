@@ -108,3 +108,11 @@ the configured OAuth client. It does not expose or store a password in the app.
 Start with the official docs at the **iOS SDK** tab:
 
 - https://account.fleetflow.io/developer/docs?sdk=ios
+
+## Signing binary releases
+
+Set `SDK_SIGNING_IDENTITY` to an Apple Development or Apple Distribution identity installed in the build machine's keychain before running `scripts/build_xcframework.sh`. The GitHub workflow reads this from the `IOS_SDK_SIGNING_IDENTITY` repository variable. Keep the publisher Team ID consistent across releases.
+
+The script signs the completed XCFramework with an Apple timestamp, verifies it, creates the ZIP without macOS metadata, then verifies an extracted copy before calculating the SwiftPM checksum. Missing signing configuration stops the release.
+
+SDK 1.4.2 is a packaging-only release of the 1.4.0 framework payload, adding the publisher signature required for the bundled SwiftyJSON dependency.
