@@ -165,6 +165,15 @@ Behavior that is identical on both platforms includes:
   2s up to 60s) don't report again; messages keep arriving through `onMessage`, and
   sending while disconnected throws `*_websocket_not_connected`. A new connect
   request replaces the previous one and drops its pending callback.
+- **Realtime outbox:** `queueRealtimeWebSocketMessage` keeps a message in memory
+  until the realtime socket takes it, connecting when needed and sending queued
+  messages in order whenever the socket opens, so samples recorded while the socket
+  is down (for example in the background) aren't lost. `flushRealtimeWebSocketOutbox`
+  waits up to a timeout for the queue to drain (for example before an API call that
+  depends on the queued samples), and `pendingRealtimeWebSocketMessageCount` reports
+  what is still queued. The queue keeps at most `realtimeWebSocketOutboxLimit`
+  messages (20,000, oldest dropped first) and is cleared on sign-out.
+  `sendRealtimeWebSocketMessage` still sends once and fails when the socket is down.
 - **Diagnostics:** the SDK's own app-session starts (enabling diagnostics,
   returning to the foreground, sign-in) are best effort: a failure is logged, never
   fails that flow, and no app session is stored.
@@ -182,6 +191,7 @@ Platform-idiomatic differences:
 | `startAppSession` | `async throws` (direct callers see the error) | `suspend`, swallows the error (no crash in a background scope) |
 | API builders | Dynamic members for any API (`customer("v5").vehicles(uuid).get()`) | `customer`, `organization`, `partner`, `admin`, `orchestrator` with `path(...)` |
 | Error text | `APIError.message` (also `errorDescription`) | `APIError.message` |
+| Realtime outbox flush | `flushRealtimeWebSocketOutbox(timeout:)` in seconds; a message leaves the queue once the socket confirms sending it | `flushRealtimeWebSocketOutbox(timeoutMs)`; a message leaves the queue once OkHttp's socket accepts it into its own send queue |
 
 Android also has `connectVehicleWebSocket` / `disconnectVehicleWebSocket` /
 `writeVehicleStream` aliases for the realtime socket. iOS also has
