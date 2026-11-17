@@ -31,6 +31,21 @@ dependencies: [
 ]
 ```
 
+Then add the products you use to your app target. Each is a signed binary XCFramework; the package brings in what
+it needs (SwiftyJSON, and TwilioVoice for `FleetFlowVoice`).
+
+| Product | What it is |
+|---|---|
+| `FleetFlowSDK` | Authentication, API requests, realtime, diagnostics. |
+| `FleetFlowThreads` | Customer support threads: models, stores, REST and socket. |
+| `FleetFlowThreadsUI` | SwiftUI components for threads (message rows, call cards, composer, ...). |
+| `FleetFlowArticles` | Help-centre articles and collections, their renderer and the in-app link handler. |
+| `FleetFlowVoice` | In-app calls to the organization (Twilio Voice). |
+
+```swift
+.product(name: "FleetFlowThreadsUI", package: "ios-sdk")
+```
+
 ## Custom authentication URL
 
 Pass the optional `authenticationURL` origin to use a verified FleetFlow custom authentication domain. Use an HTTP(S) origin without a path, query, fragment, or credentials; a trailing slash is accepted. Omit it (or pass `nil`/`null`) to keep the default authentication host. An invalid value is logged and ignored (the default host is used) instead of crashing the app.
@@ -197,6 +212,140 @@ Android also has `connectVehicleWebSocket` / `disconnectVehicleWebSocket` /
 `writeVehicleStream` aliases for the realtime socket. iOS also has
 `loginWithApple()` as a shortcut for `login(with: .apple)`.
 
+## Customer threads socket: extra query parameters
+
+`connectToThreadsWebSocket` takes optional `queryItems`, appended to the socket URL on every
+(re)connect after the credentials (they can't replace `X-Api-Key` or `Authorization`). Existing
+call sites keep compiling:
+
+```swift
+FleetFlow.shared.connectToThreadsWebSocket(
+    threadUUID: uuid,
+    queryItems: [URLQueryItem(name: "include_kinds", value: "call")],
+    onMessage: { payload in /* ... */ },
+    completion: { result in /* ... */ }
+)
+```
+
+## Threads, thread components and articles
+
+Three optional products, so apps that don't use them don't link them. The SDK ships components,
+not screens: apps build their own list, thread and welcome screens from them.
+
+| Product | Depends on | What it has |
+|---|---|---|
+| `FleetFlowThreads` | `FleetFlowSDK` | Models, lenient decoding, `FFThreadListStore`, `FFThreadStore`, REST + socket. No UI. |
+| `FleetFlowThreadsUI` | `FleetFlowThreads`, `FleetFlowArticles` | SwiftUI components: message rows, call cards, audio player, attachments, composer, typing indicator, thread rows. |
+| `FleetFlowArticles` | `FleetFlowSDK` | Article and collection models and stores, `FFArticleContentView`, `FFMarkdownText`, the link handler. |
+
+Add the products you need to the app target (Xcode: the target's **Frameworks, Libraries, and
+Embedded Content**; SwiftPM: `.product(name: "FleetFlowThreadsUI", package: "ios-sdk")`). For local
+development, reference the package folder (`packages/ios-sdk`) as a local package (Xcode **Add
+Package Dependencies... > Add Local...**, or `.package(path: "../FleetFlow/packages/ios-sdk")`).
+
+### FleetFlowThreads
+
+Everything goes to customer-api v5 with `include_kinds=call` (REST and socket), so calls and
+voicemails show in the conversation.
+
+```swift
+import FleetFlowThreads
+
+// The customer's threads, newest activity first.
+@StateObject private var list = FFThreadListStore()
+// .task { await list.load() }  .refreshable { await list.refresh() }
+// await list.delete(uuid)      await list.close(uuid)
+
+// One conversation; nil starts a new one (the uuid arrives with `thread_created`).
+@StateObject private var store = FFThreadStore(threadUUID: uuid)
+// .task { await store.start() }   .onDisappear { store.stop() }
+
+store.messages              // renderable messages, ascending (FFThreadMessage)
+store.isEmptyConversation   // show the app's welcome view only when true
+store.title                 // streamed and stored titles
+store.isAssistantTyping     // assistant working, no text visible yet
+store.isAgentTyping
+store.vehicleSelection      // the assistant asks which vehicle: answer with
+try await store.selectVehicle(vehicle)
+store.send(text: text, attachments: files) // optimistic; failures get .failed for retry
+store.retry(message.id); store.discard(message.id)
+store.composerTextChanged(text)            // typing status for the team
+try await store.closeThread()
+let url = try await store.recordingURL(call: call, source: .voicemail) // or .index(0)
+```
+
+There is one customer threads socket per app: keep one started `FFThreadStore` at a time.
+`FFThreadReducer.reduce(&state, event)` is the pure event reducer the store uses, and
+`FFThreadsService` (default `FFThreadsAPI`) can be replaced for tests and previews.
+
+Models: `FFThread` (`status: FFThreadStatus`, `isCallThread`, `previewText`), `FFThreadMessage`
+(`role: FFThreadMessageRole`, `kind: FFThreadMessageKind`, `text`, `sender`, `attachments`,
+`call`, `sendState`, `isStreaming`, `isRenderable`), `FFThreadAttachment` (image, video, pdf, file,
+article), `FFCallLog` (voicemail, recordings, transcript, `outcome`). Unknown roles and kinds decode
+to `.unknown(raw)` and aren't rendered; a broken item never fails a whole list.
+
+### FleetFlowThreadsUI
+
+```swift
+import FleetFlowThreadsUI
+import FleetFlowArticles
+
+ScrollView {
+    LazyVStack(spacing: 12) {
+        ForEach(store.messages) { message in
+            FFThreadMessageRow(message: message, store: store)
+        }
+        if store.isAssistantTyping { FFTypingIndicator(label: FFThreadsStrings.default.assistant) }
+    }
+}
+.safeAreaInset(edge: .bottom) {
+    FFComposer(text: $text, attachments: pending, onAttach: { showPicker = true },
+               onRemoveAttachment: { a in pending.removeAll { $0.id == a.id } }) {
+        store.send(text: text, attachments: pending)
+        text = ""; pending = []
+    }
+}
+.onChange(of: text) { store.composerTextChanged($1) }
+.ffThreadsTheme(FFThreadsTheme(customerBubble: .black, teamBubble: Color("Block")))
+.ffLinkHandler(onOpenArticle: { uuid in openedArticle = uuid })
+```
+
+- `FFThreadMessageRow` picks the customer bubble, team/assistant bubble (with the sender's name),
+  system caption or `FFCallLogCard`; unknown messages render nothing.
+- `FFCallLogCard(call:timestamp:recordingProvider:)` plays the voicemail and recordings with
+  `FFAudioPlayerView` (fetched on first play, downloaded, then AVAudioPlayer) and shows the transcript.
+- `FFAttachmentGrid` / `FFAttachmentView`, `FFArticleCard`, `FFImagePreview`, `FFThreadRow`,
+  `FFTypingIndicator`, `FFComposer`, and `FFOutgoingAttachment.jpeg(_:)` / `.file(at:)`.
+- Strings come from the SDK's tables (en, nl, de, fr, es). Override them with
+  `FFThreadsTheme(strings: FFThreadsStrings(overrides: [...], provider: { key in ... }))`.
+
+### FleetFlowArticles
+
+```swift
+import FleetFlowArticles
+
+@StateObject private var article = FFArticleStore(articleUUID: uuid)
+// .task { await article.load() }
+ScrollView {
+    if let loaded = article.article {
+        Text(loaded.title() ?? "")
+        FFArticleContentView(article: loaded) // content in the preferred language, then English
+    }
+}
+.ffArticlesTheme(FFArticlesTheme(cardBackground: Color("Block")))
+
+@StateObject private var help = FFArticleCollectionStore()            // the collections
+@StateObject private var section = FFArticleCollectionStore(collectionUUID: uuid) // one collection
+```
+
+`FFArticlesAPI` also has `articles(query:)` and `submitReview(articleUUID:stars:)`.
+
+**Links.** `FFLinkHandler` (`FFThreadLinkHandler` in FleetFlowThreadsUI) opens `article:<uuid>`
+and any link whose path has `articles/<uuid>` (`/articles/<uuid>`, `/help/.../articles/<uuid>`)
+with the app's `onOpenArticle`; other links go to `onOpenURL`, or by default to an in-app browser
+(SFSafariViewController). `FFMarkdownText` renders markdown (headings, lists, emphasis, code,
+quotes, links, bare URLs, YouTube thumbnail cards) and sends every tap through the handler.
+
 ## Full documentation
 
 Start with the official docs at the **iOS SDK** tab:
@@ -205,6 +354,14 @@ Start with the official docs at the **iOS SDK** tab:
 
 ## Signing binary releases
 
-Set `SDK_SIGNING_IDENTITY` to an Apple Development or Apple Distribution identity installed in the build machine's keychain before running `scripts/build_xcframework.sh`. The GitHub workflow reads this from the `IOS_SDK_SIGNING_IDENTITY` repository variable. Keep the publisher Team ID consistent across releases.
+Every product is released as a signed binary XCFramework. `scripts/build_xcframework.sh` builds the core
+(`FleetFlowSDK.xcodeproj`); `scripts/build_addon_xcframeworks.sh` then builds `FleetFlowThreads`,
+`FleetFlowThreadsUI`, `FleetFlowArticles` and `FleetFlowVoice` against that core XCFramework (`CORE_XCFRAMEWORK`),
+from `release/project.yml` with XcodeGen. The add-ons don't contain SwiftyJSON: they use the copy inside the core.
+`scripts/render_public_package.py` writes the public `Package.swift`: each product is its binary plus a small source
+target that links the binaries and packages it needs at runtime. For a locally signed build (the workflow's
+`signed_build_tag`), upload all five `<Product>.xcframework.zip` files to that private release.
+
+Set `SDK_SIGNING_IDENTITY` to an Apple Development or Apple Distribution identity installed in the build machine's keychain before running the build scripts. The GitHub workflow reads this from the `IOS_SDK_SIGNING_IDENTITY` repository variable. Keep the publisher Team ID consistent across releases.
 
 The script signs the completed XCFramework with an Apple timestamp, verifies it, creates the ZIP without macOS metadata, then verifies an extracted copy before calculating the SwiftPM checksum. Missing signing configuration stops the release.
