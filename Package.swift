@@ -21,8 +21,8 @@ let package = Package(
 	targets: [
 		.binaryTarget(
 			name: "FleetFlowSDK",
-			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.0/FleetFlowSDK.xcframework.zip",
-			checksum: "810ae7cdbc01eb8ca711e2567bd1b5776576168a97d3772262744b3828729b8f"
+			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.1/FleetFlowSDK.xcframework.zip",
+			checksum: "6c6d4f9fa0418c5f656a1af9f30c35b919001480494e63b0cf3ccc00a582c550"
 		),
 		.target(
 			name: "FleetFlowSDKDependencies",
@@ -31,8 +31,8 @@ let package = Package(
 		),
 		.binaryTarget(
 			name: "FleetFlowThreads",
-			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.0/FleetFlowThreads.xcframework.zip",
-			checksum: "c1165deabafbddab7afce72c794e1ba82a191f3817ec313f5409e55206e79158"
+			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.1/FleetFlowThreads.xcframework.zip",
+			checksum: "57cbcc048204f4adbaa13074ee55a6fa0156be88f3e9b51f84e878bbaefa498f"
 		),
 		.target(
 			name: "FleetFlowThreadsDependencies",
@@ -41,8 +41,8 @@ let package = Package(
 		),
 		.binaryTarget(
 			name: "FleetFlowArticles",
-			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.0/FleetFlowArticles.xcframework.zip",
-			checksum: "403fe9089641f181fa35f0252ba452712f3f508eb3dd24296b9dd8d8409171d7"
+			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.1/FleetFlowArticles.xcframework.zip",
+			checksum: "db54aaaa39b8319353310992d78ea02ce2ee681dca177b85c973ccc3863b04f8"
 		),
 		.target(
 			name: "FleetFlowArticlesDependencies",
@@ -51,8 +51,8 @@ let package = Package(
 		),
 		.binaryTarget(
 			name: "FleetFlowThreadsUI",
-			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.0/FleetFlowThreadsUI.xcframework.zip",
-			checksum: "05b19560db694cd99b1fff4ffa2ab187eba6325b320bbb91357b3fcb1bb19c3d"
+			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.1/FleetFlowThreadsUI.xcframework.zip",
+			checksum: "901ada8f71a3317bc22b8e77fdfb28a7267e775274c22635f4f107da4779ea6d"
 		),
 		.target(
 			name: "FleetFlowThreadsUIDependencies",
@@ -61,8 +61,8 @@ let package = Package(
 		),
 		.binaryTarget(
 			name: "FleetFlowVoice",
-			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.0/FleetFlowVoice.xcframework.zip",
-			checksum: "a851ca33c98c7f4421220fc981d7bb01b8f7a96b989ce82b624427d6c0f23bfc"
+			url: "https://github.com/FleetFlow/ios-sdk/releases/download/v2.1.1/FleetFlowVoice.xcframework.zip",
+			checksum: "e8873a512e24878929852ed8d2cfe91f922b4c84c4921dece574b93a9035a809"
 		),
 		.target(
 			name: "FleetFlowVoiceDependencies",
